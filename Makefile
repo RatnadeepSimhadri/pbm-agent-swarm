@@ -79,6 +79,7 @@ install:
 revert:
 	@echo "Reverting seed-app to last committed state..."
 	git checkout -- seed-app/
+	git clean -fd seed-app/
 	@echo "Done. Seed app reverted."
 
 # Clean generated files
