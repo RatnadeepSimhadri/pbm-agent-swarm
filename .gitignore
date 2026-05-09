@@ -19,6 +19,9 @@ dist/
 .DS_Store
 Thumbs.db
 
+# Orchestrator workspaces (generated artifacts)
+orchestrator/workspaces/
+
 # Environment
 .env
 .env.local
