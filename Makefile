@@ -27,7 +27,7 @@ orchestrator:
 	@echo "Starting orchestrator on http://localhost:8001..."
 	cd orchestrator && \
 		source .venv/bin/activate && \
-		uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
+		uvicorn app.main:app --reload --reload-dir app --host 0.0.0.0 --port 8001
 
 # Start dashboard on :5174
 dashboard:
@@ -40,7 +40,7 @@ demo:
 	@echo "  Orchestrator: http://localhost:8001"
 	@echo "  Dashboard:    http://localhost:5174"
 	@trap 'kill 0' EXIT; \
-		(cd orchestrator && source .venv/bin/activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 8001) & \
+		(cd orchestrator && source .venv/bin/activate && uvicorn app.main:app --host 0.0.0.0 --port 8001) & \
 		(cd dashboard && npm run dev) & \
 		wait
 

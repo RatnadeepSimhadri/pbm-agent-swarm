@@ -10,9 +10,10 @@ from app.events import EventBus
 from app.models import AgentRole, EventType, PipelineEvent, PipelineState, PipelineTask
 from app.workspace import Workspace
 
-# Simulated token streaming speed (characters per chunk)
-CHARS_PER_CHUNK = 15
-CHUNK_DELAY = 0.03  # seconds between chunks
+# Simulated token streaming speed — tuned to look like real Claude output
+# ~10 events/sec per agent, readable pace for a demo
+CHARS_PER_CHUNK = 60
+CHUNK_DELAY = 0.08  # 80ms between chunks
 
 
 async def _stream_text(
