@@ -86,7 +86,7 @@
 
 - [x] Project scaffolding: `orchestrator/` with FastAPI + requirements
 - [x] Task state machine: QUEUED → ASSIGNED → IN_PROGRESS → DONE | FAILED
-- [x] DAG definition: declare 6 tasks with dependency edges (PM→TL→Arch→[BE,FE]→QA)
+- [x] DAG definition: declare 7 tasks with dependency edges (PM→TL→Arch→[BE,FE]→QA→Deployer)
 - [x] Async DAG executor: polls for tasks whose deps are satisfied, runs them
 - [x] WebSocket endpoint: `/ws` — clients connect, receive all events
 - [x] Event bus: publish events `{ type, agent, data, timestamp }`
@@ -188,6 +188,15 @@
 
 - [x] System prompt: writes and runs pytest tests
 - [x] Tools: `read_file`, `write_file`, `run_command`
+
+### Phase 4G: Deployer Agent (Human-in-the-Loop)
+
+- [x] `DeployRunner` — standalone runner (no LLM), approval gate via `asyncio.Event`
+- [x] `WAITING_APPROVAL` task status with amber DAG visualization
+- [x] `POST /api/deploy/approve` and `/reject` endpoints
+- [x] Dashboard `DeployApproval` component — file list, preview, approve/reject buttons
+- [x] Wired into both mock and real pipelines (shared runner)
+- [x] `make revert` target to undo deployed changes (`git checkout -- seed-app/`)
 
 ### Phase 4 Infrastructure
 
