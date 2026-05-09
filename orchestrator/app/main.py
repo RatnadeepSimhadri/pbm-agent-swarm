@@ -87,7 +87,7 @@ async def _run_pipeline():
     current_deploy_runner = deploy_runner
 
     if settings.use_mock:
-        runner = MockAgentRunner(current_workspace, deploy_runner)
+        runner = MockAgentRunner(current_workspace, deploy_runner, settings.seed_app_path)
     else:
         from app.agents.claude_runner import ClaudeAgentRunner
         runner = ClaudeAgentRunner(current_workspace, settings.seed_app_path, deploy_runner)

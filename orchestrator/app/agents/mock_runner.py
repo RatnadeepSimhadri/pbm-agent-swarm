@@ -1,8 +1,10 @@
-"""Mock agent runner that simulates all 6 agents with canned output and realistic delays."""
+"""Mock agent runner that simulates all 7 agents with canned output and realistic delays."""
 
 from __future__ import annotations
 
 import asyncio
+import os
+from pathlib import Path
 from typing import Any
 
 from app.agents.runner import AgentRunner
@@ -48,9 +50,10 @@ async def _emit_file_write(agent: str, path: str, lines: int, event_bus: EventBu
 
 
 class MockAgentRunner(AgentRunner):
-    def __init__(self, workspace: Workspace, deploy_runner=None):
+    def __init__(self, workspace: Workspace, deploy_runner=None, seed_app_path: str = "../seed-app"):
         self.workspace = workspace
         self.deploy_runner = deploy_runner
+        self.seed_app_path = os.path.abspath(seed_app_path)
 
     async def run(
         self,
@@ -427,17 +430,30 @@ def get_cost_estimate(
         self.workspace.write_file("backend/app/routes/cost_estimate.py", route_code)
         await _emit_file_write(agent, "backend/app/routes/cost_estimate.py", len(route_code.splitlines()), event_bus)
 
-        # Simulate registering the router
+        # Actually edit main.py to register the router
         await _stream_text("\nRegistering router in `app/main.py`:\n```python\nfrom app.routes import cost_estimate\napp.include_router(cost_estimate.router)\n```\n", agent, event_bus)
-        await _emit_tool_call(agent, "edit_file", {"path": "backend/app/main.py", "old_string": "# register routers", "new_string": "# register routers\nfrom app.routes import cost_estimate\napp.include_router(cost_estimate.router)"}, event_bus)
+        await _emit_tool_call(agent, "edit_file", {"path": "backend/app/main.py", "old_string": "from app.routes import auth, drugs, ...", "new_string": "from app.routes import auth, cost_estimate, drugs, ..."}, event_bus)
 
-        total_lines = len(schema_code.splitlines()) + len(service_code.splitlines()) + len(route_code.splitlines())
+        main_py = Path(self.seed_app_path, "backend/app/main.py").read_text()
+        main_py = main_py.replace(
+            "from app.routes import auth, drugs, formulary, members, plans",
+            "from app.routes import auth, cost_estimate, drugs, formulary, members, plans",
+        )
+        main_py = main_py.replace(
+            "app.include_router(formulary.router)",
+            "app.include_router(formulary.router)\napp.include_router(cost_estimate.router)",
+        )
+        self.workspace.write_file("backend/app/main.py", main_py)
+        await _emit_file_write(agent, "backend/app/main.py", len(main_py.splitlines()), event_bus)
+
+        total_lines = len(schema_code.splitlines()) + len(service_code.splitlines()) + len(route_code.splitlines()) + len(main_py.splitlines())
         return {
             "output": "Backend implementation complete: schema, service, route for /api/cost-estimate",
             "artifacts": [
                 "backend/app/schemas/cost_estimate.py",
                 "backend/app/services/cost_estimate_service.py",
                 "backend/app/routes/cost_estimate.py",
+                "backend/app/main.py",
             ],
             "tokens_used": 3421,
             "lines_written": total_lines,
@@ -543,16 +559,55 @@ export function CostCheckerPage() {
         self.workspace.write_file("frontend/src/pages/CostCheckerPage.jsx", page_code)
         await _emit_file_write(agent, "frontend/src/pages/CostCheckerPage.jsx", len(page_code.splitlines()), event_bus)
 
-        # Route + nav updates
-        await _stream_text("\nAdding route to `App.jsx` and nav item to `Sidebar.jsx`...\n", agent, event_bus)
-        await _emit_tool_call(agent, "edit_file", {"path": "frontend/src/App.jsx", "old_string": "/* routes */", "new_string": "<Route path=\"/cost-checker\" element={<CostCheckerPage />} />"}, event_bus)
-        await _emit_tool_call(agent, "edit_file", {"path": "frontend/src/components/Sidebar.jsx", "old_string": "// nav items", "new_string": "{ to: '/cost-checker', label: 'Cost Checker', icon: CostIcon }"}, event_bus)
+        # Actually edit App.jsx to add route
+        await _stream_text("\nAdding route to `App.jsx`...\n", agent, event_bus)
+        await _emit_tool_call(agent, "edit_file", {"path": "frontend/src/App.jsx", "old_string": "import { MedicationsPage }...", "new_string": "import { CostCheckerPage }..."}, event_bus)
 
+        app_jsx = Path(self.seed_app_path, "frontend/src/App.jsx").read_text()
+        app_jsx = app_jsx.replace(
+            "import { MedicationsPage } from './pages/MedicationsPage';",
+            "import { MedicationsPage } from './pages/MedicationsPage';\nimport { CostCheckerPage } from './pages/CostCheckerPage';",
+        )
+        app_jsx = app_jsx.replace(
+            '<Route path="/medications" element={<MedicationsPage />} />',
+            '<Route path="/medications" element={<MedicationsPage />} />\n            <Route path="/cost-checker" element={<CostCheckerPage />} />',
+        )
+        self.workspace.write_file("frontend/src/App.jsx", app_jsx)
+        await _emit_file_write(agent, "frontend/src/App.jsx", len(app_jsx.splitlines()), event_bus)
+
+        # Actually edit Sidebar.jsx to add nav item
+        await _stream_text("\nAdding nav item to `Sidebar.jsx`...\n", agent, event_bus)
+        await _emit_tool_call(agent, "edit_file", {"path": "frontend/src/components/Sidebar.jsx", "old_string": "navItems = [...]", "new_string": "navItems = [..., Cost Checker]"}, event_bus)
+
+        sidebar_jsx = Path(self.seed_app_path, "frontend/src/components/Sidebar.jsx").read_text()
+        sidebar_jsx = sidebar_jsx.replace(
+            "{ to: '/medications', label: 'Medications', icon: MedicationsIcon },",
+            "{ to: '/medications', label: 'Medications', icon: MedicationsIcon },\n  { to: '/cost-checker', label: 'Cost Checker', icon: CostCheckerIcon },",
+        )
+        # Add the CostCheckerIcon component at the end
+        cost_checker_icon = '''
+function CostCheckerIcon() {
+  return (
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+}
+'''
+        sidebar_jsx = sidebar_jsx.rstrip() + "\n" + cost_checker_icon
+        self.workspace.write_file("frontend/src/components/Sidebar.jsx", sidebar_jsx)
+        await _emit_file_write(agent, "frontend/src/components/Sidebar.jsx", len(sidebar_jsx.splitlines()), event_bus)
+
+        total_lines = len(page_code.splitlines()) + len(app_jsx.splitlines()) + len(sidebar_jsx.splitlines())
         return {
             "output": "Frontend implementation complete: CostCheckerPage with search, results, and navigation",
-            "artifacts": ["frontend/src/pages/CostCheckerPage.jsx"],
+            "artifacts": [
+                "frontend/src/pages/CostCheckerPage.jsx",
+                "frontend/src/App.jsx",
+                "frontend/src/components/Sidebar.jsx",
+            ],
             "tokens_used": 2876,
-            "lines_written": len(page_code.splitlines()),
+            "lines_written": total_lines,
         }
 
     async def _run_qa(self, pipeline: PipelineState, task: PipelineTask, event_bus: EventBus) -> dict[str, Any]:
