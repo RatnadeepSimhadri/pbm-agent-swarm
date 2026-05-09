@@ -6,6 +6,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from app.agents.deploy_runner import DeployRunner
 from app.agents.mock_runner import MockAgentRunner
 from app.config import settings
 from app.dag import DAGExecutor, build_pipeline
@@ -34,6 +35,7 @@ app.add_middleware(
 event_bus = EventBus()
 current_pipeline: PipelineState | None = None
 current_workspace: Workspace | None = None
+current_deploy_runner: DeployRunner | None = None
 pipeline_lock = asyncio.Lock()
 
 
@@ -80,12 +82,15 @@ async def start_pipeline(request: RunRequest):
 
 
 async def _run_pipeline():
-    global current_pipeline
+    global current_pipeline, current_deploy_runner
+    deploy_runner = DeployRunner(current_workspace, settings.seed_app_path)
+    current_deploy_runner = deploy_runner
+
     if settings.use_mock:
-        runner = MockAgentRunner(current_workspace)
+        runner = MockAgentRunner(current_workspace, deploy_runner)
     else:
         from app.agents.claude_runner import ClaudeAgentRunner
-        runner = ClaudeAgentRunner(current_workspace, settings.seed_app_path)
+        runner = ClaudeAgentRunner(current_workspace, settings.seed_app_path, deploy_runner)
     logger.info("Using %s runner", "mock" if settings.use_mock else "Claude")
     executor = DAGExecutor(event_bus, runner)
     current_pipeline = await executor.execute(current_pipeline)
@@ -137,6 +142,24 @@ async def get_artifact(path: str):
         return {"path": path, "content": content}
     except FileNotFoundError:
         return {"error": f"File not found: {path}"}
+
+
+@app.post("/api/deploy/approve")
+async def approve_deploy():
+    if not current_deploy_runner:
+        return {"error": "No active deployment"}
+    current_deploy_runner.approved = True
+    current_deploy_runner.approval_event.set()
+    return {"status": "approved"}
+
+
+@app.post("/api/deploy/reject")
+async def reject_deploy():
+    if not current_deploy_runner:
+        return {"error": "No active deployment"}
+    current_deploy_runner.approved = False
+    current_deploy_runner.approval_event.set()
+    return {"status": "rejected"}
 
 
 @app.get("/api/health")

@@ -48,8 +48,9 @@ async def _emit_file_write(agent: str, path: str, lines: int, event_bus: EventBu
 
 
 class MockAgentRunner(AgentRunner):
-    def __init__(self, workspace: Workspace):
+    def __init__(self, workspace: Workspace, deploy_runner=None):
         self.workspace = workspace
+        self.deploy_runner = deploy_runner
 
     async def run(
         self,
@@ -57,6 +58,10 @@ class MockAgentRunner(AgentRunner):
         task: PipelineTask,
         event_bus: EventBus,
     ) -> dict[str, Any]:
+        # Deployer is handled by the shared DeployRunner
+        if task.agent == AgentRole.DEPLOYER and self.deploy_runner:
+            return await self.deploy_runner.run(pipeline, task, event_bus)
+
         agent = task.agent.value
         handlers = {
             AgentRole.PRODUCT_MANAGER: self._run_pm,

@@ -1,4 +1,4 @@
-.PHONY: dev seed-backend seed-frontend orchestrator dashboard demo demo-live seed-db test clean
+.PHONY: dev seed-backend seed-frontend orchestrator dashboard demo demo-live seed-db test clean revert
 
 # Start full stack (backend + frontend concurrently)
 dev:
@@ -74,6 +74,12 @@ install:
 	cd seed-app/frontend && npm install
 	cd orchestrator && python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
 	cd dashboard && npm install
+
+# Revert seed-app to last committed state (undo deployed changes)
+revert:
+	@echo "Reverting seed-app to last committed state..."
+	git checkout -- seed-app/
+	@echo "Done. Seed app reverted."
 
 # Clean generated files
 clean:

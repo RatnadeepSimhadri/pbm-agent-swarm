@@ -32,10 +32,12 @@ Demonstrate a multi-agent developer workflow — AI agents take a one-line busin
 │   • Metrics (bottom)     │     │  │              └─────┬─────┘   │  │
 │                          │     │  │                    ▼         │  │
 │                          │     │  │                   QA         │  │
+│                          │     │  │                    ▼         │  │
+│                          │     │  │              Deployer (HITL) │  │
 │                          │     │  └──────────────────────────────┘  │
 │                          │     │                                    │
-│                          │     │  Shared workspace: agents read/    │
-│                          │     │  write files into seed-app/        │
+│                          │     │  Human approves → files copied     │
+│                          │     │  from workspace into seed-app/     │
 └──────────────────────────┘     └──────────────┬─────────────────────┘
                                                 │
                                                 │ Modifies

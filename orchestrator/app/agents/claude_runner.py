@@ -13,7 +13,7 @@ from app.agents.runner import AgentRunner
 from app.agents.tool_executor import ToolExecutor
 from app.config import settings
 from app.events import EventBus
-from app.models import EventType, PipelineEvent, PipelineState, PipelineTask
+from app.models import AgentRole, EventType, PipelineEvent, PipelineState, PipelineTask
 from app.tools import get_tools_for_agent
 from app.workspace import Workspace
 
@@ -30,9 +30,10 @@ def _load_prompt(agent_role: str) -> str:
 
 
 class ClaudeAgentRunner(AgentRunner):
-    def __init__(self, workspace: Workspace, seed_app_path: str):
+    def __init__(self, workspace: Workspace, seed_app_path: str, deploy_runner=None):
         self.workspace = workspace
         self.seed_app_path = seed_app_path
+        self.deploy_runner = deploy_runner
         self.client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
         self.tool_executor = ToolExecutor(workspace, seed_app_path)
 
@@ -42,6 +43,10 @@ class ClaudeAgentRunner(AgentRunner):
         task: PipelineTask,
         event_bus: EventBus,
     ) -> dict[str, Any]:
+        # Deployer is handled by the shared DeployRunner
+        if task.agent == AgentRole.DEPLOYER and self.deploy_runner:
+            return await self.deploy_runner.run(pipeline, task, event_bus)
+
         agent_role = task.agent.value
         agent_name = agent_role
 

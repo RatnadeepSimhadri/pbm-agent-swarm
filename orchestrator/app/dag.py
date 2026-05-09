@@ -22,10 +22,10 @@ logger = logging.getLogger(__name__)
 
 
 def build_pipeline(intent: str, pipeline_id: str, workspace_path: str) -> PipelineState:
-    """Build the 6-agent DAG with dependency edges.
+    """Build the 7-agent DAG with dependency edges.
 
     Pipeline topology:
-        PM → Tech Lead → Architect → [Backend Dev, Frontend Dev] → QA
+        PM → Tech Lead → Architect → [Backend Dev, Frontend Dev] → QA → Deployer
     """
     tasks = [
         PipelineTask(
@@ -57,6 +57,11 @@ def build_pipeline(intent: str, pipeline_id: str, workspace_path: str) -> Pipeli
             id="qa",
             agent=AgentRole.QA_ENGINEER,
             dependencies=["backend_dev", "frontend_dev"],
+        ),
+        PipelineTask(
+            id="deployer",
+            agent=AgentRole.DEPLOYER,
+            dependencies=["qa"],
         ),
     ]
 

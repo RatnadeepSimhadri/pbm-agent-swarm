@@ -11,6 +11,7 @@ class TaskStatus(str, Enum):
     QUEUED = "queued"
     ASSIGNED = "assigned"
     IN_PROGRESS = "in_progress"
+    WAITING_APPROVAL = "waiting_approval"
     DONE = "done"
     FAILED = "failed"
 
@@ -22,6 +23,7 @@ class AgentRole(str, Enum):
     BACKEND_DEV = "backend_dev"
     FRONTEND_DEV = "frontend_dev"
     QA_ENGINEER = "qa_engineer"
+    DEPLOYER = "deployer"
 
 
 AGENT_DISPLAY_NAMES = {
@@ -31,6 +33,7 @@ AGENT_DISPLAY_NAMES = {
     AgentRole.BACKEND_DEV: "Backend Dev",
     AgentRole.FRONTEND_DEV: "Frontend Dev",
     AgentRole.QA_ENGINEER: "QA Engineer",
+    AgentRole.DEPLOYER: "Deployer",
 }
 
 
@@ -101,6 +104,8 @@ class EventType(str, Enum):
     FILE_WRITE = "file_write"
     TEST_RESULT = "test_result"
     METRICS_UPDATE = "metrics_update"
+    DEPLOY_APPROVAL_REQUESTED = "deploy_approval_requested"
+    DEPLOY_RESULT = "deploy_result"
     ERROR = "error"
 
 

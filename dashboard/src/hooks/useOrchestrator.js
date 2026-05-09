@@ -11,6 +11,9 @@ const INITIAL_STATE = {
   artifacts: [],
   metrics: { tasksCompleted: 0, tasksTotal: 0, tokensUsed: 0, elapsed: 0, linesGenerated: 0 },
   testResults: null,
+  deployFiles: [],
+  deployPending: false,
+  deployResult: null,
 };
 
 export function useOrchestrator() {
@@ -105,6 +108,19 @@ export function useOrchestrator() {
           break;
         }
 
+        case 'deploy_approval_requested': {
+          next.deployFiles = event.data.files || [];
+          next.deployPending = true;
+          next.deployResult = null;
+          break;
+        }
+
+        case 'deploy_result': {
+          next.deployPending = false;
+          next.deployResult = event.data;
+          break;
+        }
+
         default:
           break;
       }
@@ -176,5 +192,14 @@ export function useOrchestrator() {
     return res.json();
   }, []);
 
-  return { ...state, startPipeline, fetchArtifact };
+  // Deploy approval actions
+  const approveDeploy = useCallback(async () => {
+    await fetch(`${API_URL}/api/deploy/approve`, { method: 'POST' });
+  }, []);
+
+  const rejectDeploy = useCallback(async () => {
+    await fetch(`${API_URL}/api/deploy/reject`, { method: 'POST' });
+  }, []);
+
+  return { ...state, startPipeline, fetchArtifact, approveDeploy, rejectDeploy };
 }

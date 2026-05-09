@@ -7,6 +7,7 @@ import javascript from 'react-syntax-highlighter/dist/esm/languages/hljs/javascr
 import json from 'react-syntax-highlighter/dist/esm/languages/hljs/json';
 import { githubGist } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import { MermaidDiagram } from './MermaidDiagram';
+import { DeployApproval } from './DeployApproval';
 
 SyntaxHighlighter.registerLanguage('python', python);
 SyntaxHighlighter.registerLanguage('javascript', javascript);
@@ -20,31 +21,53 @@ const AGENTS = [
   { id: 'backend_dev', label: 'BE' },
   { id: 'frontend_dev', label: 'FE' },
   { id: 'qa_engineer', label: 'QA' },
+  { id: 'deployer', label: 'Deploy' },
 ];
 
 const STATUS_DOT = {
   queued: 'bg-gray-300',
   assigned: 'bg-blue-300',
   in_progress: 'bg-blue-500 animate-pulse',
+  waiting_approval: 'bg-amber-500 animate-pulse',
   done: 'bg-emerald-500',
   failed: 'bg-red-500',
 };
 
-export function AgentFeed({ agentOutputs, tasks }) {
+const TASK_TO_AGENT = {
+  pm: 'product_manager',
+  tech_lead: 'tech_lead',
+  architect: 'architect',
+  backend_dev: 'backend_dev',
+  frontend_dev: 'frontend_dev',
+  qa: 'qa_engineer',
+  deployer: 'deployer',
+};
+
+const AGENT_TO_TASK = {
+  product_manager: 'pm',
+  tech_lead: 'tech_lead',
+  architect: 'architect',
+  backend_dev: 'backend_dev',
+  frontend_dev: 'frontend_dev',
+  qa_engineer: 'qa',
+  deployer: 'deployer',
+};
+
+export function AgentFeed({ agentOutputs, tasks, deployFiles, deployPending, deployResult, onApprove, onReject, fetchArtifact }) {
   const [activeTab, setActiveTab] = useState(null);
   const scrollRef = useRef(null);
 
   useEffect(() => {
+    // Auto-switch to waiting_approval (deployer) or in_progress agent
+    const waitingAgent = Object.entries(tasks).find(([, t]) => t.status === 'waiting_approval');
+    if (waitingAgent) {
+      const taskToAgent = TASK_TO_AGENT;
+      setActiveTab(taskToAgent[waitingAgent[0]] || waitingAgent[0]);
+      return;
+    }
     const activeAgent = Object.entries(tasks).find(([, t]) => t.status === 'in_progress');
     if (activeAgent) {
-      const taskToAgent = {
-        pm: 'product_manager',
-        tech_lead: 'tech_lead',
-        architect: 'architect',
-        backend_dev: 'backend_dev',
-        frontend_dev: 'frontend_dev',
-        qa: 'qa_engineer',
-      };
+      const taskToAgent = TASK_TO_AGENT;
       setActiveTab(taskToAgent[activeAgent[0]] || activeAgent[0]);
     }
   }, [tasks]);
@@ -56,17 +79,11 @@ export function AgentFeed({ agentOutputs, tasks }) {
   }, [agentOutputs, activeTab]);
 
   const content = activeTab ? (agentOutputs[activeTab] || '') : '';
+  const isDeployerTab = activeTab === 'deployer';
+  const showDeployUI = isDeployerTab && (deployPending || deployResult);
 
   const getAgentStatus = (agentId) => {
-    const taskIdMap = {
-      product_manager: 'pm',
-      tech_lead: 'tech_lead',
-      architect: 'architect',
-      backend_dev: 'backend_dev',
-      frontend_dev: 'frontend_dev',
-      qa_engineer: 'qa',
-    };
-    const task = tasks[taskIdMap[agentId]];
+    const task = tasks[AGENT_TO_TASK[agentId]];
     return task?.status || 'queued';
   };
 
@@ -95,15 +112,28 @@ export function AgentFeed({ agentOutputs, tasks }) {
       </div>
 
       {/* Content */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 text-xs leading-relaxed">
-        {content ? (
-          <RenderOutput text={content} />
-        ) : (
-          <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-            {activeTab ? 'Waiting for agent output...' : 'Select an agent tab above'}
-          </div>
-        )}
-      </div>
+      {showDeployUI ? (
+        <div className="flex-1 overflow-hidden">
+          <DeployApproval
+            files={deployFiles}
+            pending={deployPending}
+            result={deployResult}
+            onApprove={onApprove}
+            onReject={onReject}
+            fetchArtifact={fetchArtifact}
+          />
+        </div>
+      ) : (
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 text-xs leading-relaxed">
+          {content ? (
+            <RenderOutput text={content} />
+          ) : (
+            <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+              {activeTab ? 'Waiting for agent output...' : 'Select an agent tab above'}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

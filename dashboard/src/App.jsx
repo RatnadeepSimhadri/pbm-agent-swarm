@@ -15,8 +15,13 @@ export default function App() {
     artifacts,
     metrics,
     testResults,
+    deployFiles,
+    deployPending,
+    deployResult,
     startPipeline,
     fetchArtifact,
+    approveDeploy,
+    rejectDeploy,
   } = useOrchestrator();
 
   const prdContent = agentOutputs['product_manager'] || '';
@@ -40,11 +45,20 @@ export default function App() {
 
         {/* Center: DAG + Agent Feed */}
         <div className="w-1/2 flex flex-col">
-          <div className="h-[280px] border-b border-gray-200 bg-gray-50/50">
+          <div className="h-[340px] border-b border-gray-200 bg-gray-50/50">
             <PipelineDAG tasks={tasks} />
           </div>
           <div className="flex-1 overflow-hidden bg-white border-r border-gray-200">
-            <AgentFeed agentOutputs={agentOutputs} tasks={tasks} />
+            <AgentFeed
+              agentOutputs={agentOutputs}
+              tasks={tasks}
+              deployFiles={deployFiles}
+              deployPending={deployPending}
+              deployResult={deployResult}
+              onApprove={approveDeploy}
+              onReject={rejectDeploy}
+              fetchArtifact={fetchArtifact}
+            />
           </div>
         </div>
 

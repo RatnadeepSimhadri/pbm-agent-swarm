@@ -7,6 +7,7 @@ const STATUS_STYLES = {
   queued: { bg: '#ffffff', border: '#e5e7eb', text: '#9ca3af', label: '#6b7280' },
   assigned: { bg: '#eff6ff', border: '#93c5fd', text: '#3b82f6', label: '#1d4ed8' },
   in_progress: { bg: '#eff6ff', border: '#3b82f6', text: '#3b82f6', label: '#1d4ed8' },
+  waiting_approval: { bg: '#fffbeb', border: '#f59e0b', text: '#f59e0b', label: '#b45309' },
   done: { bg: '#f0fdf4', border: '#86efac', text: '#22c55e', label: '#15803d' },
   failed: { bg: '#fef2f2', border: '#fca5a5', text: '#ef4444', label: '#b91c1c' },
 };
@@ -18,12 +19,13 @@ const AGENT_LABELS = {
   backend_dev: 'Backend Dev',
   frontend_dev: 'Frontend Dev',
   qa: 'QA Engineer',
+  deployer: 'Deployer',
 };
 
 function AgentNode({ data }) {
   const status = data.status || 'queued';
   const s = STATUS_STYLES[status];
-  const isActive = status === 'in_progress';
+  const isActive = status === 'in_progress' || status === 'waiting_approval';
 
   return (
     <motion.div
@@ -55,7 +57,7 @@ function AgentNode({ data }) {
         letterSpacing: '0.04em',
         fontWeight: 500,
       }}>
-        {status === 'in_progress' ? 'working...' : status}
+        {status === 'in_progress' ? 'working...' : status === 'waiting_approval' ? 'awaiting approval' : status}
       </div>
       {data.duration != null && status === 'done' && (
         <div style={{ color: '#9ca3af', fontSize: 10, marginTop: 2 }}>
@@ -75,6 +77,7 @@ const INITIAL_NODES = [
   { id: 'backend_dev', type: 'agent', position: { x: 120, y: 280 }, data: { id: 'backend_dev', status: 'queued', label: 'BE' } },
   { id: 'frontend_dev', type: 'agent', position: { x: 480, y: 280 }, data: { id: 'frontend_dev', status: 'queued', label: 'FE' } },
   { id: 'qa', type: 'agent', position: { x: 300, y: 380 }, data: { id: 'qa', status: 'queued', label: 'QA' } },
+  { id: 'deployer', type: 'agent', position: { x: 300, y: 470 }, data: { id: 'deployer', status: 'queued', label: 'Deploy' } },
 ];
 
 const INITIAL_EDGES = [
@@ -84,6 +87,7 @@ const INITIAL_EDGES = [
   { id: 'arch-fe', source: 'architect', target: 'frontend_dev', style: { stroke: '#d1d5db' } },
   { id: 'be-qa', source: 'backend_dev', target: 'qa', style: { stroke: '#d1d5db' } },
   { id: 'fe-qa', source: 'frontend_dev', target: 'qa', style: { stroke: '#d1d5db' } },
+  { id: 'qa-deployer', source: 'qa', target: 'deployer', style: { stroke: '#d1d5db' } },
 ];
 
 export function PipelineDAG({ tasks }) {
