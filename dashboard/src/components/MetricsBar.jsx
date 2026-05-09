@@ -19,7 +19,7 @@ export function MetricsBar({ metrics, testResults, pipeline }) {
   const isFailed = pipeline?.status === 'failed';
 
   return (
-    <div className="flex items-center gap-6 px-6 py-3 bg-surface border-t border-surface-lighter">
+    <div className="flex items-center gap-6 px-6 py-3 bg-white border-t border-gray-200">
       {/* Pipeline status */}
       <div className="flex items-center gap-2">
         {isRunning && (
@@ -29,48 +29,39 @@ export function MetricsBar({ metrics, testResults, pipeline }) {
             transition={{ duration: 1.5, repeat: Infinity }}
           />
         )}
-        {isComplete && <div className="w-2 h-2 rounded-full bg-green-500" />}
+        {isComplete && <div className="w-2 h-2 rounded-full bg-emerald-500" />}
         {isFailed && <div className="w-2 h-2 rounded-full bg-red-500" />}
-        {!pipeline && <div className="w-2 h-2 rounded-full bg-slate-600" />}
-        <span className="text-xs font-medium text-slate-400">
+        {!pipeline && <div className="w-2 h-2 rounded-full bg-gray-300" />}
+        <span className="text-xs font-medium text-gray-500">
           {isRunning ? 'Running' : isComplete ? 'Complete' : isFailed ? 'Failed' : 'Idle'}
         </span>
       </div>
 
-      <div className="h-4 w-px bg-surface-lighter" />
+      <div className="h-4 w-px bg-gray-200" />
 
-      {/* Tasks */}
       <Metric label="Tasks" value={`${metrics.tasksCompleted}/${metrics.tasksTotal}`} />
-
-      {/* Elapsed */}
       <Metric label="Time" value={formatTime(metrics.elapsed)} />
-
-      {/* Tokens */}
       <Metric label="Tokens" value={formatNumber(metrics.tokensUsed)} />
-
-      {/* Lines */}
       <Metric label="Lines" value={formatNumber(metrics.linesGenerated)} />
 
-      {/* Test results */}
       {testResults && (
         <>
-          <div className="h-4 w-px bg-surface-lighter" />
+          <div className="h-4 w-px bg-gray-200" />
           <div className="flex items-center gap-1.5">
-            <span className="text-xs text-slate-500">Tests:</span>
-            <span className="text-xs font-mono text-green-400">{testResults.passed} passed</span>
+            <span className="text-xs text-gray-400">Tests:</span>
+            <span className="text-xs font-mono text-emerald-600">{testResults.passed} passed</span>
             {testResults.failed > 0 && (
-              <span className="text-xs font-mono text-red-400">{testResults.failed} failed</span>
+              <span className="text-xs font-mono text-red-600">{testResults.failed} failed</span>
             )}
           </div>
         </>
       )}
 
-      {/* Spacer + progress bar */}
       <div className="flex-1" />
       {pipeline && (
-        <div className="w-32 h-1.5 bg-surface-lighter rounded-full overflow-hidden">
+        <div className="w-32 h-1.5 bg-gray-100 rounded-full overflow-hidden">
           <motion.div
-            className={`h-full rounded-full ${isComplete ? 'bg-green-500' : isFailed ? 'bg-red-500' : 'bg-primary-500'}`}
+            className={`h-full rounded-full ${isComplete ? 'bg-emerald-500' : isFailed ? 'bg-red-500' : 'bg-gray-900'}`}
             initial={{ width: 0 }}
             animate={{ width: `${(metrics.tasksCompleted / Math.max(metrics.tasksTotal, 1)) * 100}%` }}
             transition={{ duration: 0.5 }}
@@ -84,8 +75,8 @@ export function MetricsBar({ metrics, testResults, pipeline }) {
 function Metric({ label, value }) {
   return (
     <div className="flex items-center gap-1.5">
-      <span className="text-xs text-slate-500">{label}</span>
-      <span className="text-xs font-mono font-medium text-slate-300">{value}</span>
+      <span className="text-xs text-gray-400">{label}</span>
+      <span className="text-xs font-mono font-medium text-gray-700">{value}</span>
     </div>
   );
 }

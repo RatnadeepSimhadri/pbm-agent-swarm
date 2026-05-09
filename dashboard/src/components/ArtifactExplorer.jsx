@@ -3,7 +3,7 @@ import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import python from 'react-syntax-highlighter/dist/esm/languages/hljs/python';
 import javascript from 'react-syntax-highlighter/dist/esm/languages/hljs/javascript';
 import markdown from 'react-syntax-highlighter/dist/esm/languages/hljs/markdown';
-import { atomOneDark } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import { githubGist } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import { motion, AnimatePresence } from 'framer-motion';
 
 SyntaxHighlighter.registerLanguage('python', python);
@@ -11,16 +11,18 @@ SyntaxHighlighter.registerLanguage('javascript', javascript);
 SyntaxHighlighter.registerLanguage('jsx', javascript);
 SyntaxHighlighter.registerLanguage('markdown', markdown);
 
-const FILE_ICONS = {
-  '.py': '\u{1F40D}',
-  '.jsx': '\u{269B}',
-  '.md': '\u{1F4DD}',
-  '.json': '\u{1F4E6}',
-};
-
 function getFileIcon(path) {
-  const ext = path.slice(path.lastIndexOf('.'));
-  return FILE_ICONS[ext] || '\u{1F4C4}';
+  if (path.endsWith('.py')) return 'py';
+  if (path.endsWith('.jsx') || path.endsWith('.js')) return 'js';
+  if (path.endsWith('.md')) return 'md';
+  return 'f';
+}
+
+function getIconColor(path) {
+  if (path.endsWith('.py')) return 'text-blue-600 bg-blue-50';
+  if (path.endsWith('.jsx') || path.endsWith('.js')) return 'text-amber-600 bg-amber-50';
+  if (path.endsWith('.md')) return 'text-gray-600 bg-gray-100';
+  return 'text-gray-500 bg-gray-50';
 }
 
 function getLanguage(path) {
@@ -54,17 +56,17 @@ export function ArtifactExplorer({ artifacts, fetchArtifact }) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-4 py-3 border-b border-surface-lighter flex items-center justify-between">
+      <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-amber-500" />
-          <h3 className="text-sm font-semibold text-slate-200">Artifacts</h3>
+          <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+          <h3 className="text-sm font-medium text-gray-900">Artifacts</h3>
         </div>
-        <span className="text-xs text-slate-500">{artifacts.length} files</span>
+        <span className="text-xs text-gray-400">{artifacts.length} files</span>
       </div>
 
       <div className="flex-1 overflow-y-auto">
         {artifacts.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-slate-500 text-sm">
+          <div className="flex items-center justify-center h-full text-gray-400 text-sm">
             No files yet...
           </div>
         ) : (
@@ -73,16 +75,17 @@ export function ArtifactExplorer({ artifacts, fetchArtifact }) {
               <div key={path}>
                 <button
                   onClick={() => handleClick(path)}
-                  className={`w-full text-left px-4 py-2 text-xs flex items-center gap-2 transition-colors ${
+                  className={`w-full text-left px-4 py-2.5 text-xs flex items-center gap-2.5 transition-colors ${
                     selectedFile === path
-                      ? 'bg-surface-lighter text-slate-200'
-                      : 'text-slate-400 hover:bg-surface-light hover:text-slate-300'
+                      ? 'bg-gray-100 text-gray-900'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                 >
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: 'spring', duration: 0.3 }}
+                    className={`w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold ${getIconColor(path)}`}
                   >
                     {getFileIcon(path)}
                   </motion.span>
@@ -96,23 +99,23 @@ export function ArtifactExplorer({ artifacts, fetchArtifact }) {
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.2 }}
-                      className="overflow-hidden border-y border-surface-lighter"
+                      className="overflow-hidden border-y border-gray-100"
                     >
                       {loading ? (
-                        <div className="p-4 text-xs text-slate-500">Loading...</div>
+                        <div className="p-4 text-xs text-gray-400">Loading...</div>
                       ) : (
                         <SyntaxHighlighter
                           language={getLanguage(path)}
-                          style={atomOneDark}
+                          style={githubGist}
                           customStyle={{
-                            background: '#0c1222',
+                            background: '#f9fafb',
                             padding: 12,
                             fontSize: 10,
                             margin: 0,
                             maxHeight: 300,
                           }}
                           showLineNumbers
-                          lineNumberStyle={{ color: '#334155', fontSize: 9 }}
+                          lineNumberStyle={{ color: '#d1d5db', fontSize: 9 }}
                           wrapLongLines
                         >
                           {fileContent}

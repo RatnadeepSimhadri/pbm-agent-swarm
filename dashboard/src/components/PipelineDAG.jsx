@@ -1,14 +1,14 @@
-import { useCallback, useMemo } from 'react';
-import { ReactFlow, Background, useNodesState, useEdgesState } from '@xyflow/react';
+import { useMemo } from 'react';
+import { ReactFlow, Background } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { motion } from 'framer-motion';
 
-const STATUS_COLORS = {
-  queued: { bg: '#334155', border: '#475569', text: '#94a3b8' },
-  assigned: { bg: '#1e3a5f', border: '#3b82f6', text: '#93c5fd' },
-  in_progress: { bg: '#1e3a8a', border: '#3b82f6', text: '#bfdbfe' },
-  done: { bg: '#14532d', border: '#22c55e', text: '#86efac' },
-  failed: { bg: '#7f1d1d', border: '#ef4444', text: '#fca5a5' },
+const STATUS_STYLES = {
+  queued: { bg: '#ffffff', border: '#e5e7eb', text: '#9ca3af', label: '#6b7280' },
+  assigned: { bg: '#eff6ff', border: '#93c5fd', text: '#3b82f6', label: '#1d4ed8' },
+  in_progress: { bg: '#eff6ff', border: '#3b82f6', text: '#3b82f6', label: '#1d4ed8' },
+  done: { bg: '#f0fdf4', border: '#86efac', text: '#22c55e', label: '#15803d' },
+  failed: { bg: '#fef2f2', border: '#fca5a5', text: '#ef4444', label: '#b91c1c' },
 };
 
 const AGENT_LABELS = {
@@ -20,55 +20,45 @@ const AGENT_LABELS = {
   qa: 'QA Engineer',
 };
 
-const AGENT_ICONS = {
-  pm: '\u{1F4CB}',
-  tech_lead: '\u{1F4CA}',
-  architect: '\u{1F3D7}',
-  backend_dev: '\u{2699}',
-  frontend_dev: '\u{1F3A8}',
-  qa: '\u{1F9EA}',
-};
-
 function AgentNode({ data }) {
   const status = data.status || 'queued';
-  const colors = STATUS_COLORS[status];
+  const s = STATUS_STYLES[status];
   const isActive = status === 'in_progress';
 
   return (
     <motion.div
       animate={isActive ? {
         boxShadow: [
-          `0 0 8px 2px ${colors.border}40`,
-          `0 0 20px 6px ${colors.border}60`,
-          `0 0 8px 2px ${colors.border}40`,
+          `0 0 0px 0px ${s.border}00`,
+          `0 0 12px 4px ${s.border}40`,
+          `0 0 0px 0px ${s.border}00`,
         ],
-      } : { boxShadow: `0 0 0px 0px transparent` }}
+      } : { boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}
       transition={isActive ? { duration: 2, repeat: Infinity } : {}}
       style={{
-        background: colors.bg,
-        border: `2px solid ${colors.border}`,
-        borderRadius: 12,
-        padding: '12px 18px',
+        background: s.bg,
+        border: `1.5px solid ${s.border}`,
+        borderRadius: 10,
+        padding: '10px 20px',
         minWidth: 140,
         textAlign: 'center',
       }}
     >
-      <div style={{ fontSize: 20, marginBottom: 4 }}>{AGENT_ICONS[data.id] || ''}</div>
-      <div style={{ color: colors.text, fontSize: 13, fontWeight: 600 }}>
+      <div style={{ color: s.label, fontSize: 13, fontWeight: 600 }}>
         {AGENT_LABELS[data.id] || data.label}
       </div>
       <div style={{
-        color: colors.text,
-        fontSize: 10,
-        marginTop: 4,
+        color: s.text,
+        fontSize: 11,
+        marginTop: 3,
         textTransform: 'uppercase',
-        letterSpacing: '0.05em',
-        opacity: 0.8,
+        letterSpacing: '0.04em',
+        fontWeight: 500,
       }}>
         {status === 'in_progress' ? 'working...' : status}
       </div>
       {data.duration != null && status === 'done' && (
-        <div style={{ color: colors.text, fontSize: 10, opacity: 0.6, marginTop: 2 }}>
+        <div style={{ color: '#9ca3af', fontSize: 10, marginTop: 2 }}>
           {data.duration.toFixed(1)}s
         </div>
       )}
@@ -80,20 +70,20 @@ const nodeTypes = { agent: AgentNode };
 
 const INITIAL_NODES = [
   { id: 'pm', type: 'agent', position: { x: 300, y: 0 }, data: { id: 'pm', status: 'queued', label: 'PM' } },
-  { id: 'tech_lead', type: 'agent', position: { x: 300, y: 100 }, data: { id: 'tech_lead', status: 'queued', label: 'TL' } },
-  { id: 'architect', type: 'agent', position: { x: 300, y: 200 }, data: { id: 'architect', status: 'queued', label: 'Arch' } },
-  { id: 'backend_dev', type: 'agent', position: { x: 120, y: 310 }, data: { id: 'backend_dev', status: 'queued', label: 'BE' } },
-  { id: 'frontend_dev', type: 'agent', position: { x: 480, y: 310 }, data: { id: 'frontend_dev', status: 'queued', label: 'FE' } },
-  { id: 'qa', type: 'agent', position: { x: 300, y: 420 }, data: { id: 'qa', status: 'queued', label: 'QA' } },
+  { id: 'tech_lead', type: 'agent', position: { x: 300, y: 90 }, data: { id: 'tech_lead', status: 'queued', label: 'TL' } },
+  { id: 'architect', type: 'agent', position: { x: 300, y: 180 }, data: { id: 'architect', status: 'queued', label: 'Arch' } },
+  { id: 'backend_dev', type: 'agent', position: { x: 120, y: 280 }, data: { id: 'backend_dev', status: 'queued', label: 'BE' } },
+  { id: 'frontend_dev', type: 'agent', position: { x: 480, y: 280 }, data: { id: 'frontend_dev', status: 'queued', label: 'FE' } },
+  { id: 'qa', type: 'agent', position: { x: 300, y: 380 }, data: { id: 'qa', status: 'queued', label: 'QA' } },
 ];
 
 const INITIAL_EDGES = [
-  { id: 'pm-tl', source: 'pm', target: 'tech_lead', animated: true, style: { stroke: '#475569' } },
-  { id: 'tl-arch', source: 'tech_lead', target: 'architect', animated: true, style: { stroke: '#475569' } },
-  { id: 'arch-be', source: 'architect', target: 'backend_dev', animated: true, style: { stroke: '#475569' } },
-  { id: 'arch-fe', source: 'architect', target: 'frontend_dev', animated: true, style: { stroke: '#475569' } },
-  { id: 'be-qa', source: 'backend_dev', target: 'qa', animated: true, style: { stroke: '#475569' } },
-  { id: 'fe-qa', source: 'frontend_dev', target: 'qa', animated: true, style: { stroke: '#475569' } },
+  { id: 'pm-tl', source: 'pm', target: 'tech_lead', style: { stroke: '#d1d5db' } },
+  { id: 'tl-arch', source: 'tech_lead', target: 'architect', style: { stroke: '#d1d5db' } },
+  { id: 'arch-be', source: 'architect', target: 'backend_dev', style: { stroke: '#d1d5db' } },
+  { id: 'arch-fe', source: 'architect', target: 'frontend_dev', style: { stroke: '#d1d5db' } },
+  { id: 'be-qa', source: 'backend_dev', target: 'qa', style: { stroke: '#d1d5db' } },
+  { id: 'fe-qa', source: 'frontend_dev', target: 'qa', style: { stroke: '#d1d5db' } },
 ];
 
 export function PipelineDAG({ tasks }) {
@@ -101,7 +91,6 @@ export function PipelineDAG({ tasks }) {
     return INITIAL_NODES.map((node) => {
       const task = tasks[node.id];
       const status = task?.status || 'queued';
-      const colors = STATUS_COLORS[status];
       return {
         ...node,
         data: {
@@ -119,8 +108,8 @@ export function PipelineDAG({ tasks }) {
       const done = sourceTask?.status === 'done';
       return {
         ...edge,
-        animated: !done,
-        style: { stroke: done ? '#22c55e' : '#475569', strokeWidth: done ? 2 : 1 },
+        animated: !done && sourceTask?.status === 'in_progress',
+        style: { stroke: done ? '#86efac' : '#d1d5db', strokeWidth: done ? 2 : 1 },
       };
     });
   }, [tasks]);
@@ -132,7 +121,7 @@ export function PipelineDAG({ tasks }) {
         edges={edges}
         nodeTypes={nodeTypes}
         fitView
-        fitViewOptions={{ padding: 0.3 }}
+        fitViewOptions={{ padding: 0.25 }}
         nodesDraggable={false}
         nodesConnectable={false}
         elementsSelectable={false}
@@ -143,7 +132,7 @@ export function PipelineDAG({ tasks }) {
         preventScrolling={false}
         proOptions={{ hideAttribution: true }}
       >
-        <Background color="#1e293b" gap={20} size={1} />
+        <Background color="#e5e7eb" gap={24} size={1} />
       </ReactFlow>
     </div>
   );

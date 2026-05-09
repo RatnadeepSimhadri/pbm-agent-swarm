@@ -3,7 +3,7 @@ import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import python from 'react-syntax-highlighter/dist/esm/languages/hljs/python';
 import javascript from 'react-syntax-highlighter/dist/esm/languages/hljs/javascript';
 import json from 'react-syntax-highlighter/dist/esm/languages/hljs/json';
-import { atomOneDark } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import { githubGist } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 
 SyntaxHighlighter.registerLanguage('python', python);
 SyntaxHighlighter.registerLanguage('javascript', javascript);
@@ -20,10 +20,10 @@ const AGENTS = [
 ];
 
 const STATUS_DOT = {
-  queued: 'bg-slate-500',
-  assigned: 'bg-blue-400',
+  queued: 'bg-gray-300',
+  assigned: 'bg-blue-300',
   in_progress: 'bg-blue-500 animate-pulse',
-  done: 'bg-green-500',
+  done: 'bg-emerald-500',
   failed: 'bg-red-500',
 };
 
@@ -31,11 +31,9 @@ export function AgentFeed({ agentOutputs, tasks }) {
   const [activeTab, setActiveTab] = useState(null);
   const scrollRef = useRef(null);
 
-  // Auto-switch to the currently active agent
   useEffect(() => {
     const activeAgent = Object.entries(tasks).find(([, t]) => t.status === 'in_progress');
     if (activeAgent) {
-      // Map task id to agent role name
       const taskToAgent = {
         pm: 'product_manager',
         tech_lead: 'tech_lead',
@@ -48,7 +46,6 @@ export function AgentFeed({ agentOutputs, tasks }) {
     }
   }, [tasks]);
 
-  // Auto-scroll
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -57,7 +54,6 @@ export function AgentFeed({ agentOutputs, tasks }) {
 
   const content = activeTab ? (agentOutputs[activeTab] || '') : '';
 
-  // Get task status for each agent tab
   const getAgentStatus = (agentId) => {
     const taskIdMap = {
       product_manager: 'pm',
@@ -74,7 +70,7 @@ export function AgentFeed({ agentOutputs, tasks }) {
   return (
     <div className="flex flex-col h-full">
       {/* Tabs */}
-      <div className="flex border-b border-surface-lighter overflow-x-auto">
+      <div className="flex border-b border-gray-200 bg-gray-50/50">
         {AGENTS.map(({ id, label }) => {
           const status = getAgentStatus(id);
           const isActive = activeTab === id;
@@ -84,8 +80,8 @@ export function AgentFeed({ agentOutputs, tasks }) {
               onClick={() => setActiveTab(id)}
               className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium whitespace-nowrap transition-colors border-b-2 ${
                 isActive
-                  ? 'border-primary-500 text-primary-400 bg-surface-light'
-                  : 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-surface-light/50'
+                  ? 'border-gray-900 text-gray-900'
+                  : 'border-transparent text-gray-400 hover:text-gray-600'
               }`}
             >
               <span className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT[status]}`} />
@@ -100,7 +96,7 @@ export function AgentFeed({ agentOutputs, tasks }) {
         {content ? (
           <RenderOutput text={content} />
         ) : (
-          <div className="flex items-center justify-center h-full text-slate-500 text-sm">
+          <div className="flex items-center justify-center h-full text-gray-400 text-sm font-sans">
             {activeTab ? 'Waiting for agent output...' : 'Select an agent tab above'}
           </div>
         )}
@@ -110,7 +106,6 @@ export function AgentFeed({ agentOutputs, tasks }) {
 }
 
 function RenderOutput({ text }) {
-  // Split text into code blocks and regular text
   const parts = [];
   const codeBlockRegex = /```(\w*)\n([\s\S]*?)```/g;
   let lastIndex = 0;
@@ -135,13 +130,13 @@ function RenderOutput({ text }) {
             <SyntaxHighlighter
               key={i}
               language={part.language}
-              style={atomOneDark}
+              style={githubGist}
               customStyle={{
-                background: '#0f172a',
+                background: '#f9fafb',
                 borderRadius: 8,
-                padding: 12,
+                padding: 14,
                 fontSize: 11,
-                border: '1px solid #334155',
+                border: '1px solid #e5e7eb',
               }}
               wrapLongLines
             >
@@ -150,11 +145,11 @@ function RenderOutput({ text }) {
           );
         }
         return (
-          <div key={i} className="text-slate-400 whitespace-pre-wrap">
+          <div key={i} className="text-gray-600 whitespace-pre-wrap">
             {part.content.split('\n').map((line, j) => {
               if (line.startsWith('> Tool:')) {
                 return (
-                  <div key={j} className="text-amber-500/70 bg-amber-500/5 px-2 py-0.5 rounded my-1 text-[11px]">
+                  <div key={j} className="text-amber-700 bg-amber-50 border border-amber-100 px-2.5 py-1 rounded my-1 text-[11px]">
                     {line}
                   </div>
                 );
