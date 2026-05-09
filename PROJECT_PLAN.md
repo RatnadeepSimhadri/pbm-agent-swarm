@@ -141,7 +141,7 @@
   - Test results (when available)
   - Progress bar
 - [x] Input bar: text field to enter business intent, start button, WS connection indicator
-- [x] Visual polish: dark theme, smooth Framer Motion transitions, professional color scheme
+- [x] Visual polish: ShadCN-inspired light theme, Framer Motion transitions, mermaid diagrams, GFM markdown
 
 ### Phase 3 Acceptance Criteria
 
