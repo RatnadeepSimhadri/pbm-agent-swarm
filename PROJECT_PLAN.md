@@ -196,7 +196,10 @@
 - [x] `POST /api/deploy/approve` and `/reject` endpoints
 - [x] Dashboard `DeployApproval` component — file list, preview, approve/reject buttons
 - [x] Wired into both mock and real pipelines (shared runner)
-- [x] `make revert` target to undo deployed changes (`git checkout -- seed-app/`)
+- [x] `make revert` target to undo deployed changes (`git checkout` + `git clean`)
+- [x] Mock runner produces deployable code (real edits to main.py, App.jsx, Sidebar.jsx)
+- [x] Mermaid diagram for TL dependency DAG (replaced ASCII art)
+- [x] Draggable resize handles between dashboard panel columns
 
 ### Phase 4 Infrastructure
 
