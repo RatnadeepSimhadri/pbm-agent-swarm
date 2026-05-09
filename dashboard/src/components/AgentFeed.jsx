@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import python from 'react-syntax-highlighter/dist/esm/languages/hljs/python';
 import javascript from 'react-syntax-highlighter/dist/esm/languages/hljs/javascript';
 import json from 'react-syntax-highlighter/dist/esm/languages/hljs/json';
 import { githubGist } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import { MermaidDiagram } from './MermaidDiagram';
 
 SyntaxHighlighter.registerLanguage('python', python);
 SyntaxHighlighter.registerLanguage('javascript', javascript);
@@ -92,11 +95,11 @@ export function AgentFeed({ agentOutputs, tasks }) {
       </div>
 
       {/* Content */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 font-mono text-xs leading-relaxed">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 text-xs leading-relaxed">
         {content ? (
           <RenderOutput text={content} />
         ) : (
-          <div className="flex items-center justify-center h-full text-gray-400 text-sm font-sans">
+          <div className="flex items-center justify-center h-full text-gray-400 text-sm">
             {activeTab ? 'Waiting for agent output...' : 'Select an agent tab above'}
           </div>
         )}
@@ -106,59 +109,163 @@ export function AgentFeed({ agentOutputs, tasks }) {
 }
 
 function RenderOutput({ text }) {
+  // Split text into tool-call lines and markdown sections
   const parts = [];
-  const codeBlockRegex = /```(\w*)\n([\s\S]*?)```/g;
-  let lastIndex = 0;
-  let match;
+  const lines = text.split('\n');
+  let mdBuffer = [];
 
-  while ((match = codeBlockRegex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push({ type: 'text', content: text.slice(lastIndex, match.index) });
+  const flushMd = () => {
+    if (mdBuffer.length > 0) {
+      parts.push({ type: 'md', content: mdBuffer.join('\n') });
+      mdBuffer = [];
     }
-    parts.push({ type: 'code', language: match[1] || 'python', content: match[2] });
-    lastIndex = match.index + match[0].length;
+  };
+
+  for (const line of lines) {
+    if (line.startsWith('> Tool:')) {
+      flushMd();
+      parts.push({ type: 'tool', content: line });
+    } else {
+      mdBuffer.push(line);
+    }
   }
-  if (lastIndex < text.length) {
-    parts.push({ type: 'text', content: text.slice(lastIndex) });
-  }
+  flushMd();
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       {parts.map((part, i) => {
-        if (part.type === 'code') {
+        if (part.type === 'tool') {
           return (
-            <SyntaxHighlighter
-              key={i}
-              language={part.language}
-              style={githubGist}
-              customStyle={{
-                background: '#f9fafb',
-                borderRadius: 8,
-                padding: 14,
-                fontSize: 11,
-                border: '1px solid #e5e7eb',
-              }}
-              wrapLongLines
-            >
-              {part.content.trim()}
-            </SyntaxHighlighter>
+            <div key={i} className="text-amber-700 bg-amber-50 border border-amber-100 px-2.5 py-1 rounded text-[11px] font-mono">
+              {part.content}
+            </div>
           );
         }
         return (
-          <div key={i} className="text-gray-600 whitespace-pre-wrap">
-            {part.content.split('\n').map((line, j) => {
-              if (line.startsWith('> Tool:')) {
-                return (
-                  <div key={j} className="text-amber-700 bg-amber-50 border border-amber-100 px-2.5 py-1 rounded my-1 text-[11px]">
-                    {line}
-                  </div>
-                );
-              }
-              return <span key={j}>{line}{'\n'}</span>;
-            })}
+          <div key={i}>
+            <Markdown remarkPlugins={[remarkGfm]} components={agentMarkdownComponents}>{part.content}</Markdown>
           </div>
         );
       })}
     </div>
   );
 }
+
+const agentMarkdownComponents = {
+  h1({ children }) {
+    return (
+      <div className="mb-3">
+        <h1 className="text-sm font-semibold text-gray-900 leading-snug">{children}</h1>
+        <div className="mt-1 h-px bg-gradient-to-r from-gray-200 to-transparent" />
+      </div>
+    );
+  },
+
+  h2({ children }) {
+    return (
+      <div className="mt-4 mb-1.5">
+        <h2 className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">{children}</h2>
+      </div>
+    );
+  },
+
+  h3({ children }) {
+    return <h3 className="text-[12px] font-semibold text-gray-800 mt-3 mb-1">{children}</h3>;
+  },
+
+  p({ children }) {
+    return <p className="text-[12px] text-gray-600 leading-relaxed mb-2 text-justify">{children}</p>;
+  },
+
+  ul({ children }) {
+    return <ul className="space-y-1 my-1.5 list-none pl-0">{children}</ul>;
+  },
+
+  ol({ children }) {
+    return <ol className="space-y-1 my-1.5 list-none pl-0">{children}</ol>;
+  },
+
+  li({ children }) {
+    return (
+      <li className="flex gap-2 text-[12px] text-gray-600 leading-relaxed">
+        <span className="text-gray-300 mt-0.5 shrink-0">&#x2022;</span>
+        <span>{children}</span>
+      </li>
+    );
+  },
+
+  strong({ children }) {
+    return <strong className="font-semibold text-gray-800">{children}</strong>;
+  },
+
+  em({ children }) {
+    return <em className="italic text-gray-500">{children}</em>;
+  },
+
+  blockquote({ children }) {
+    return (
+      <blockquote className="border-l-2 border-gray-200 pl-3 my-2 text-[12px] text-gray-500 italic">
+        {children}
+      </blockquote>
+    );
+  },
+
+  table({ children }) {
+    return (
+      <div className="my-2 overflow-x-auto rounded-lg border border-gray-200">
+        <table className="w-full text-[11px]">{children}</table>
+      </div>
+    );
+  },
+
+  thead({ children }) {
+    return <thead className="bg-gray-50">{children}</thead>;
+  },
+
+  th({ children }) {
+    return <th className="text-left px-3 py-1.5 font-medium text-gray-700 border-b border-gray-200">{children}</th>;
+  },
+
+  td({ children }) {
+    return <td className="px-3 py-1.5 text-gray-600 border-b border-gray-100">{children}</td>;
+  },
+
+  code({ className, children, ...props }) {
+    const match = /language-(\w+)/.exec(className || '');
+    if (match) {
+      if (match[1] === 'mermaid') {
+        return <MermaidDiagram chart={String(children)} />;
+      }
+      return (
+        <SyntaxHighlighter
+          language={match[1]}
+          style={githubGist}
+          customStyle={{
+            background: '#f9fafb',
+            borderRadius: 8,
+            padding: 12,
+            fontSize: 11,
+            border: '1px solid #e5e7eb',
+            margin: '8px 0',
+          }}
+          wrapLongLines
+        >
+          {String(children).replace(/\n$/, '')}
+        </SyntaxHighlighter>
+      );
+    }
+    return (
+      <code className="text-[11px] font-medium text-gray-800 bg-gray-100 px-1 py-0.5 rounded" {...props}>
+        {children}
+      </code>
+    );
+  },
+
+  pre({ children }) {
+    return <>{children}</>;
+  },
+
+  hr() {
+    return <div className="my-3 h-px bg-gray-100" />;
+  },
+};

@@ -242,27 +242,40 @@ None — the existing `FormularyDrug` model already contains all required data (
 2. **Route**: Add `/cost-checker` route in `App.jsx`
 3. **Navigation**: Add "Cost Checker" item to `Sidebar.jsx` nav array
 
+## Request Flow
+
+```mermaid
+sequenceDiagram
+    participant U as Member UI
+    participant FE as CostCheckerPage
+    participant API as GET /api/cost-estimate
+    participant SVC as cost_estimate_service
+    participant DB as SQLite
+
+    U->>FE: Enter drug name
+    FE->>API: ?drug_name=metformin
+    API->>SVC: estimate_cost(member_id, drug_name)
+    SVC->>DB: JOIN Formulary + Drug + Plan
+    DB-->>SVC: FormularyDrug rows
+    SVC-->>API: {results, member_plan, total}
+    API-->>FE: CostEstimateResponse
+    FE-->>U: Render result cards
+```
+
 ## Component Spec — CostCheckerPage
-```
-┌─────────────────────────────────────────┐
-│ Drug Cost Checker                       │
-│                                         │
-│ ┌─────────────────────────────────────┐ │
-│ │ 🔍 Search for a medication...       │ │
-│ └─────────────────────────────────────┘ │
-│                                         │
-│ ┌─────────────────┐ ┌─────────────────┐ │
-│ │ Metformin        │ │ Atorvastatin    │ │
-│ │ 500mg tablet     │ │ 20mg tablet     │ │
-│ │                  │ │                 │ │
-│ │ Tier 1 (Generic) │ │ Tier 1 (Generic)│ │
-│ │ Copay: $10       │ │ Copay: $10      │ │
-│ │                  │ │                 │ │
-│ │ No prior auth    │ │ No prior auth   │ │
-│ │ Qty limit: 30    │ │ Qty limit: 30   │ │
-│ └─────────────────┘ └─────────────────┘ │
-└─────────────────────────────────────────┘
-```
+
+**Layout:**
+- Page heading: "Drug Cost Checker" with subtitle
+- Search bar: text input + "Check Cost" button
+- Results grid: 2-column card layout
+
+**Result Card Fields:**
+- Drug name, strength, form
+- Tier badge (color-coded: Tier 1 green, Tier 2 blue, Tier 3 amber, Tier 4 red)
+- Copay amount (large, prominent)
+- Prior authorization status
+- Step therapy requirement
+- Quantity limit per fill
 """
 
         await _stream_text(spec, agent, event_bus)
