@@ -1,4 +1,4 @@
-.PHONY: dev seed-backend seed-frontend orchestrator seed-db test clean
+.PHONY: dev seed-backend seed-frontend orchestrator dashboard demo seed-db test clean
 
 # Start full stack (backend + frontend concurrently)
 dev:
@@ -29,6 +29,21 @@ orchestrator:
 		source .venv/bin/activate && \
 		uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 
+# Start dashboard on :5174
+dashboard:
+	@echo "Starting dashboard on http://localhost:5174..."
+	cd dashboard && npm run dev
+
+# Start orchestrator + dashboard for demo (no seed app needed)
+demo:
+	@echo "Starting Demo..."
+	@echo "  Orchestrator: http://localhost:8001"
+	@echo "  Dashboard:    http://localhost:5174"
+	@trap 'kill 0' EXIT; \
+		(cd orchestrator && source .venv/bin/activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 8001) & \
+		(cd dashboard && npm run dev) & \
+		wait
+
 # Re-seed the database (delete and recreate)
 seed-db:
 	cd seed-app/backend && \
@@ -47,6 +62,7 @@ install:
 	cd seed-app/backend && python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
 	cd seed-app/frontend && npm install
 	cd orchestrator && python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+	cd dashboard && npm install
 
 # Clean generated files
 clean:
@@ -55,3 +71,4 @@ clean:
 	rm -rf seed-app/frontend/node_modules
 	rm -rf orchestrator/.venv
 	rm -rf orchestrator/workspaces
+	rm -rf dashboard/node_modules

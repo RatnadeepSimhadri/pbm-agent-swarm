@@ -116,31 +116,32 @@
 
 **Goal**: Real-time visualization of the orchestrator pipeline.
 
-- [ ] Project scaffolding: `dashboard/` with Vite + React 18 + Tailwind + Framer Motion
-- [ ] WebSocket hook: connect to orchestrator, parse events, update state
-- [ ] Top: Pipeline DAG (react-flow)
+- [x] Project scaffolding: `dashboard/` with Vite + React 18 + Tailwind + Framer Motion
+- [x] WebSocket hook: connect to orchestrator, parse events, update state
+- [x] Top: Pipeline DAG (react-flow)
   - 6 nodes (one per agent), edges for dependencies
   - Animated state colors: gray=queued, blue=in-progress, green=done, red=failed
   - Subtle glow on active node (Framer Motion)
-- [ ] Left panel (40%): PRD Panel
+- [x] Left panel (25%): PRD Panel
   - Renders PM agent's PRD as streaming markdown (react-markdown)
-  - Typewriter effect as content arrives
-- [ ] Center panel (40%): Live Agent Feed
-  - Tabs per agent (click to switch)
+  - Auto-scrolls as content arrives
+- [x] Center panel (50%): DAG + Live Agent Feed
+  - DAG visualization at top, tabbed agent output below
   - Streaming output with syntax highlighting (react-syntax-highlighter)
-  - Auto-scrolls as content streams
-  - Distinguishes thinking vs. code output
-- [ ] Right panel (20%): Artifact Explorer
+  - Auto-scrolls as content streams, auto-switches to active agent
+  - Distinguishes code blocks vs. text vs. tool calls
+- [x] Right panel (25%): Artifact Explorer
   - File tree that grows as agents write files
-  - Click file to view contents with syntax highlighting
-- [ ] Bottom bar: Metrics
+  - Click file to view contents with syntax highlighting (expandable inline)
+- [x] Bottom bar: Metrics
   - Tasks complete (X/Y)
   - Tokens used
   - Elapsed time
   - Lines of code generated
-  - Acceptance criteria status (AC1 ✅ AC2 ⏳ ...)
-- [ ] Input bar: text field to enter business intent, start button
-- [ ] Visual polish: smooth transitions, professional color scheme, exec-ready
+  - Test results (when available)
+  - Progress bar
+- [x] Input bar: text field to enter business intent, start button, WS connection indicator
+- [x] Visual polish: dark theme, smooth Framer Motion transitions, professional color scheme
 
 ### Phase 3 Acceptance Criteria
 
