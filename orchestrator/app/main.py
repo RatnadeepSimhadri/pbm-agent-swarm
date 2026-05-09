@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from app.agents.mock_runner import MockAgentRunner
+from app.config import settings
 from app.dag import DAGExecutor, build_pipeline
 from app.events import EventBus
 from app.models import PipelineState
@@ -80,7 +81,12 @@ async def start_pipeline(request: RunRequest):
 
 async def _run_pipeline():
     global current_pipeline
-    runner = MockAgentRunner(current_workspace)
+    if settings.use_mock:
+        runner = MockAgentRunner(current_workspace)
+    else:
+        from app.agents.claude_runner import ClaudeAgentRunner
+        runner = ClaudeAgentRunner(current_workspace, settings.seed_app_path)
+    logger.info("Using %s runner", "mock" if settings.use_mock else "Claude")
     executor = DAGExecutor(event_bus, runner)
     current_pipeline = await executor.execute(current_pipeline)
 

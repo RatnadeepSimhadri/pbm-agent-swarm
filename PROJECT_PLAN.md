@@ -159,44 +159,43 @@
 
 ### Phase 4A: Product Manager Agent
 
-- [ ] System prompt (`prompts/product_manager.md`): role, output format (structured PRD with problem, personas, user stories, acceptance criteria, NFRs, out-of-scope)
-- [ ] Agent runner: Anthropic SDK streaming call with the PM prompt
-- [ ] Tools: `read_file`, `list_directory` (reads seed app for context)
-- [ ] Output: PRD as markdown + structured JSON
+- [x] System prompt (`prompts/product_manager.md`): role, output format (structured PRD with problem, personas, user stories, acceptance criteria, NFRs, out-of-scope)
+- [x] Agent runner: Anthropic SDK streaming call with the PM prompt
+- [x] Tools: `read_file`, `list_directory` (reads seed app for context)
 - [ ] Test: run PM agent standalone, verify PRD quality
 
 ### Phase 4B: Tech Lead Agent
 
-- [ ] System prompt: decomposes PRD into task DAG
-- [ ] Output: task list with dependencies, mapped to acceptance criteria, parallelism identified
-- [ ] Tools: `read_file` (reads PRD)
+- [x] System prompt: decomposes PRD into task DAG
+- [x] Tools: `read_file` (reads PRD)
 
 ### Phase 4C: Architect Agent
 
-- [ ] System prompt: designs API contracts, data model changes, component specs
-- [ ] Tools: `read_file`, `list_directory` (reads seed app structure)
-- [ ] Output: OpenAPI-style API spec, model migration notes, frontend component tree
+- [x] System prompt: designs API contracts, data model changes, component specs
+- [x] Tools: `read_file`, `list_directory` (reads seed app structure)
 
 ### Phase 4D: Backend Dev Agent
 
-- [ ] System prompt: implements backend code following seed patterns
-- [ ] Tools: `read_file`, `write_file`, `edit_file`, `list_directory`, `run_command`
-- [ ] Output: new route/service/model files, edits to main.py
-- [ ] Must follow existing patterns (route→service, Pydantic schemas, etc.)
+- [x] System prompt: implements backend code following seed patterns
+- [x] Tools: `read_file`, `write_file`, `edit_file`, `list_directory`, `run_command`
 
 ### Phase 4E: Frontend Dev Agent
 
-- [ ] System prompt: implements frontend following seed patterns
-- [ ] Tools: `read_file`, `write_file`, `edit_file`, `list_directory`
-- [ ] Output: new pages/components, edits to App.jsx and Sidebar.jsx
-- [ ] Must match existing Tailwind theme
+- [x] System prompt: implements frontend following seed patterns
+- [x] Tools: `read_file`, `write_file`, `edit_file`, `list_directory`
 
 ### Phase 4F: QA Engineer Agent
 
-- [ ] System prompt: writes and runs pytest tests
-- [ ] Tools: `read_file`, `write_file`, `run_command`
-- [ ] Output: test files + test execution report (pass/fail)
-- [ ] Runs pytest, captures and reports results
+- [x] System prompt: writes and runs pytest tests
+- [x] Tools: `read_file`, `write_file`, `run_command`
+
+### Phase 4 Infrastructure
+
+- [x] `ClaudeAgentRunner` with Anthropic SDK streaming + tool use loop
+- [x] `ToolExecutor` — executes tools against workspace + seed app
+- [x] `context.py` — injects seed app files + prior agent outputs per role
+- [x] Config toggle: `USE_MOCK=true/false`
+- [x] `make demo-live` target (requires `ANTHROPIC_API_KEY`)
 
 ### Phase 4 Acceptance Criteria
 

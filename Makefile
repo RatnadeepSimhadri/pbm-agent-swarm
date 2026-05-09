@@ -1,4 +1,4 @@
-.PHONY: dev seed-backend seed-frontend orchestrator dashboard demo seed-db test clean
+.PHONY: dev seed-backend seed-frontend orchestrator dashboard demo demo-live seed-db test clean
 
 # Start full stack (backend + frontend concurrently)
 dev:
@@ -41,6 +41,17 @@ demo:
 	@echo "  Dashboard:    http://localhost:5174"
 	@trap 'kill 0' EXIT; \
 		(cd orchestrator && source .venv/bin/activate && uvicorn app.main:app --host 0.0.0.0 --port 8001) & \
+		(cd dashboard && npm run dev) & \
+		wait
+
+# Start orchestrator + dashboard with real Claude agents (requires ANTHROPIC_API_KEY)
+demo-live:
+	@test -n "$(ANTHROPIC_API_KEY)" || (echo "Error: ANTHROPIC_API_KEY is not set" && exit 1)
+	@echo "Starting Live Demo (real Claude agents)..."
+	@echo "  Orchestrator: http://localhost:8001"
+	@echo "  Dashboard:    http://localhost:5174"
+	@trap 'kill 0' EXIT; \
+		(cd orchestrator && source .venv/bin/activate && USE_MOCK=false ANTHROPIC_API_KEY=$(ANTHROPIC_API_KEY) uvicorn app.main:app --host 0.0.0.0 --port 8001) & \
 		(cd dashboard && npm run dev) & \
 		wait
 
