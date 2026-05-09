@@ -168,12 +168,13 @@ Members currently have no way to check what their medications will cost before f
 - **Dependencies**: T1, T2
 
 ## Dependency DAG
-```
-T1 (API) ──► T2 (Service)
-    │
-    ├──────► T3 (Page) ──► T4 (Nav)
-    │
-    └──────► T5 (Tests)
+```mermaid
+graph LR
+    T1[T1: API Endpoint] --> T2[T2: Cost Service]
+    T1 --> T3[T3: Cost Checker Page]
+    T3 --> T4[T4: Navigation]
+    T1 --> T5[T5: Integration Tests]
+    T2 --> T5
 ```
 
 ## Parallelism
