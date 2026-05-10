@@ -25,3 +25,7 @@ orchestrator/workspaces/
 # Environment
 .env
 .env.local
+
+# Internal project files
+PROJECT_PLAN.md
+CLAUDE.md
