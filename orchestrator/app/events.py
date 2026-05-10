@@ -41,18 +41,19 @@ class EventBus:
                 self._clients.remove(client)
             self._queue.task_done()
 
-    async def connect(self, ws: WebSocket) -> None:
+    async def connect(self, ws: WebSocket, replay: bool = True) -> None:
         await ws.accept()
         self._clients.append(ws)
         self._ensure_drain_task()
         logger.info("WebSocket client connected (%d total)", len(self._clients))
 
-        # Send event history so late-joining clients catch up
-        for event in self._history:
-            try:
-                await ws.send_text(event.model_dump_json())
-            except Exception:
-                break
+        # Send event history so late-joining clients catch up (only during active pipeline)
+        if replay:
+            for event in self._history:
+                try:
+                    await ws.send_text(event.model_dump_json())
+                except Exception:
+                    break
 
     async def disconnect(self, ws: WebSocket) -> None:
         if ws in self._clients:

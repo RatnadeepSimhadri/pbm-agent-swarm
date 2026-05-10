@@ -182,7 +182,8 @@ async def health():
 
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket):
-    await event_bus.connect(ws)
+    replay = current_pipeline is not None and current_pipeline.status == "running"
+    await event_bus.connect(ws, replay=replay)
     try:
         while True:
             # Keep connection alive, listen for client messages (unused for now)
