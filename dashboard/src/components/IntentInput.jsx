@@ -1,10 +1,19 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 
-const DEFAULT_INTENT = 'Members should be able to check what their medications will cost before filling them';
+const SCENARIOS = [
+  {
+    label: 'Drug Cost Checker',
+    intent: 'Members should be able to check what their medications will cost before filling them',
+  },
+  {
+    label: 'Chat Bubble',
+    intent: 'Add a chat bubble to the page where users can ask questions about their medications and coverage',
+  },
+];
 
 export function IntentInput({ onSubmit, isRunning, connected }) {
-  const [intent, setIntent] = useState(DEFAULT_INTENT);
+  const [intent, setIntent] = useState(SCENARIOS[0].intent);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -14,7 +23,7 @@ export function IntentInput({ onSubmit, isRunning, connected }) {
   };
 
   return (
-    <div className="px-6 py-4 bg-white border-b border-gray-200">
+    <div className="px-6 py-3 bg-white border-b border-gray-200">
       <form onSubmit={handleSubmit} className="flex items-center gap-4">
         {/* Logo */}
         <div className="flex items-center gap-3 mr-2">
@@ -70,6 +79,20 @@ export function IntentInput({ onSubmit, isRunning, connected }) {
           <div className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-500' : 'bg-red-500'}`} />
         </div>
       </form>
+      <div className="flex items-center gap-2 mt-1.5 ml-[88px]">
+        <span className="text-[10px] text-gray-400">Try:</span>
+        {SCENARIOS.map((s) => (
+          <button
+            key={s.label}
+            type="button"
+            onClick={() => setIntent(s.intent)}
+            disabled={isRunning}
+            className="text-[10px] px-2 py-0.5 rounded-full border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700 disabled:opacity-40 transition-colors"
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
