@@ -13,7 +13,7 @@ const SCENARIOS = [
 ];
 
 export function IntentInput({ onSubmit, isRunning, connected }) {
-  const [intent, setIntent] = useState(SCENARIOS[0].intent);
+  const [intent, setIntent] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
