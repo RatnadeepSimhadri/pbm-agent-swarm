@@ -75,12 +75,13 @@ install:
 	cd orchestrator && python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
 	cd dashboard && npm install
 
-# Revert seed-app to last committed state (undo deployed changes)
+# Revert seed-app to original baseline (undo all deployed features)
 revert:
-	@echo "Reverting seed-app to last committed state..."
-	git checkout -- seed-app/
+	@echo "Reverting seed-app to baseline..."
+	@git tag seed-app-baseline 2>/dev/null || true
+	git checkout seed-app-baseline -- seed-app/
 	git clean -fd seed-app/
-	@echo "Done. Seed app reverted."
+	@echo "Done. Seed app reverted to original state."
 
 # Clean generated files
 clean:

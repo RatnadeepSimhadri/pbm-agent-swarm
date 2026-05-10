@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import re
 from pathlib import Path
 from typing import Any
 
@@ -57,6 +58,30 @@ class MockAgentRunner(AgentRunner):
         self.workspace = workspace
         self.deploy_runner = deploy_runner
         self.seed_app_path = os.path.abspath(seed_app_path)
+
+    def _patch_backend_main(self, module_name: str) -> str:
+        """Read seed-app main.py and add a route module idempotently."""
+        main_py = Path(self.seed_app_path, "backend/app/main.py").read_text()
+
+        # Add to import line if not already present
+        match = re.search(r"from app\.routes import (.+)", main_py)
+        if match:
+            modules = [m.strip() for m in match.group(1).split(",")]
+            if module_name not in modules:
+                modules.append(module_name)
+                modules.sort()
+                new_import = "from app.routes import " + ", ".join(modules)
+                main_py = main_py.replace(match.group(0), new_import)
+
+        # Add router registration if not already present
+        router_line = f"app.include_router({module_name}.router)"
+        if router_line not in main_py:
+            main_py = main_py.replace(
+                "app.include_router(formulary.router)",
+                f"app.include_router(formulary.router)\napp.include_router({module_name}.router)",
+            )
+
+        return main_py
 
     def _detect_scenario(self, intent: str) -> str:
         lower = intent.lower()
@@ -451,19 +476,11 @@ def get_cost_estimate(
         self.workspace.write_file("backend/app/routes/cost_estimate.py", route_code)
         await _emit_file_write(agent, "backend/app/routes/cost_estimate.py", len(route_code.splitlines()), event_bus)
 
-        # Actually edit main.py to register the router
+        # Edit main.py to register the router (idempotent — safe to stack with other features)
         await _stream_text("\nRegistering router in `app/main.py`:\n```python\nfrom app.routes import cost_estimate\napp.include_router(cost_estimate.router)\n```\n", agent, event_bus)
         await _emit_tool_call(agent, "edit_file", {"path": "backend/app/main.py", "old_string": "from app.routes import auth, drugs, ...", "new_string": "from app.routes import auth, cost_estimate, drugs, ..."}, event_bus)
 
-        main_py = Path(self.seed_app_path, "backend/app/main.py").read_text()
-        main_py = main_py.replace(
-            "from app.routes import auth, drugs, formulary, members, plans",
-            "from app.routes import auth, cost_estimate, drugs, formulary, members, plans",
-        )
-        main_py = main_py.replace(
-            "app.include_router(formulary.router)",
-            "app.include_router(formulary.router)\napp.include_router(cost_estimate.router)",
-        )
+        main_py = self._patch_backend_main("cost_estimate")
         self.workspace.write_file("backend/app/main.py", main_py)
         await _emit_file_write(agent, "backend/app/main.py", len(main_py.splitlines()), event_bus)
 
@@ -582,33 +599,34 @@ export function CostCheckerPage() {
         self.workspace.write_file("frontend/src/pages/CostCheckerPage.jsx", page_code)
         await _emit_file_write(agent, "frontend/src/pages/CostCheckerPage.jsx", len(page_code.splitlines()), event_bus)
 
-        # Actually edit App.jsx to add route
+        # Edit App.jsx to add route (idempotent)
         await _stream_text("\nAdding route to `App.jsx`...\n", agent, event_bus)
         await _emit_tool_call(agent, "edit_file", {"path": "frontend/src/App.jsx", "old_string": "import { MedicationsPage }...", "new_string": "import { CostCheckerPage }..."}, event_bus)
 
         app_jsx = Path(self.seed_app_path, "frontend/src/App.jsx").read_text()
-        app_jsx = app_jsx.replace(
-            "import { MedicationsPage } from './pages/MedicationsPage';",
-            "import { MedicationsPage } from './pages/MedicationsPage';\nimport { CostCheckerPage } from './pages/CostCheckerPage';",
-        )
-        app_jsx = app_jsx.replace(
-            '<Route path="/medications" element={<MedicationsPage />} />',
-            '<Route path="/medications" element={<MedicationsPage />} />\n            <Route path="/cost-checker" element={<CostCheckerPage />} />',
-        )
+        if "CostCheckerPage" not in app_jsx:
+            app_jsx = app_jsx.replace(
+                "import { MedicationsPage } from './pages/MedicationsPage';",
+                "import { MedicationsPage } from './pages/MedicationsPage';\nimport { CostCheckerPage } from './pages/CostCheckerPage';",
+            )
+            app_jsx = app_jsx.replace(
+                '<Route path="/medications" element={<MedicationsPage />} />',
+                '<Route path="/medications" element={<MedicationsPage />} />\n            <Route path="/cost-checker" element={<CostCheckerPage />} />',
+            )
         self.workspace.write_file("frontend/src/App.jsx", app_jsx)
         await _emit_file_write(agent, "frontend/src/App.jsx", len(app_jsx.splitlines()), event_bus)
 
-        # Actually edit Sidebar.jsx to add nav item
+        # Edit Sidebar.jsx to add nav item (idempotent)
         await _stream_text("\nAdding nav item to `Sidebar.jsx`...\n", agent, event_bus)
         await _emit_tool_call(agent, "edit_file", {"path": "frontend/src/components/Sidebar.jsx", "old_string": "navItems = [...]", "new_string": "navItems = [..., Cost Checker]"}, event_bus)
 
         sidebar_jsx = Path(self.seed_app_path, "frontend/src/components/Sidebar.jsx").read_text()
-        sidebar_jsx = sidebar_jsx.replace(
-            "{ to: '/medications', label: 'Medications', icon: MedicationsIcon },",
-            "{ to: '/medications', label: 'Medications', icon: MedicationsIcon },\n  { to: '/cost-checker', label: 'Cost Checker', icon: CostCheckerIcon },",
-        )
-        # Add the CostCheckerIcon component at the end
-        cost_checker_icon = '''
+        if "CostCheckerIcon" not in sidebar_jsx:
+            sidebar_jsx = sidebar_jsx.replace(
+                "{ to: '/medications', label: 'Medications', icon: MedicationsIcon },",
+                "{ to: '/medications', label: 'Medications', icon: MedicationsIcon },\n  { to: '/cost-checker', label: 'Cost Checker', icon: CostCheckerIcon },",
+            )
+            cost_checker_icon = '''
 function CostCheckerIcon() {
   return (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -617,7 +635,7 @@ function CostCheckerIcon() {
   );
 }
 '''
-        sidebar_jsx = sidebar_jsx.rstrip() + "\n" + cost_checker_icon
+            sidebar_jsx = sidebar_jsx.rstrip() + "\n" + cost_checker_icon
         self.workspace.write_file("frontend/src/components/Sidebar.jsx", sidebar_jsx)
         await _emit_file_write(agent, "frontend/src/components/Sidebar.jsx", len(sidebar_jsx.splitlines()), event_bus)
 
@@ -1119,19 +1137,11 @@ def chat(
         self.workspace.write_file("backend/app/routes/chat.py", route_code)
         await _emit_file_write(agent, "backend/app/routes/chat.py", len(route_code.splitlines()), event_bus)
 
-        # Edit main.py to register the chat router
+        # Edit main.py to register the chat router (idempotent — safe to stack with other features)
         await _stream_text("\nRegistering router in `app/main.py`:\n```python\nfrom app.routes import chat\napp.include_router(chat.router)\n```\n", agent, event_bus)
         await _emit_tool_call(agent, "edit_file", {"path": "backend/app/main.py", "old_string": "from app.routes import auth, drugs, ...", "new_string": "from app.routes import auth, chat, drugs, ..."}, event_bus)
 
-        main_py = Path(self.seed_app_path, "backend/app/main.py").read_text()
-        main_py = main_py.replace(
-            "from app.routes import auth, drugs, formulary, members, plans",
-            "from app.routes import auth, chat, drugs, formulary, members, plans",
-        )
-        main_py = main_py.replace(
-            "app.include_router(formulary.router)",
-            "app.include_router(formulary.router)\napp.include_router(chat.router)",
-        )
+        main_py = self._patch_backend_main("chat")
         self.workspace.write_file("backend/app/main.py", main_py)
         await _emit_file_write(agent, "backend/app/main.py", len(main_py.splitlines()), event_bus)
 
@@ -1317,19 +1327,20 @@ export function ChatBubble() {
         self.workspace.write_file("frontend/src/components/ChatBubble.jsx", bubble_code)
         await _emit_file_write(agent, "frontend/src/components/ChatBubble.jsx", len(bubble_code.splitlines()), event_bus)
 
-        # Edit AppLayout.jsx to add ChatBubble
+        # Edit AppLayout.jsx to add ChatBubble (idempotent)
         await _stream_text("\nAdding ChatBubble to `AppLayout.jsx`...\n", agent, event_bus)
         await _emit_tool_call(agent, "edit_file", {"path": "frontend/src/components/AppLayout.jsx", "old_string": "import { Header }...", "new_string": "import { ChatBubble }..."}, event_bus)
 
         layout_jsx = Path(self.seed_app_path, "frontend/src/components/AppLayout.jsx").read_text()
-        layout_jsx = layout_jsx.replace(
-            "import { Sidebar } from './Sidebar';\nimport { Header } from './Header';",
-            "import { Sidebar } from './Sidebar';\nimport { Header } from './Header';\nimport { ChatBubble } from './ChatBubble';",
-        )
-        layout_jsx = layout_jsx.replace(
-            "        </main>\n      </div>\n    </div>",
-            "        </main>\n      </div>\n      <ChatBubble />\n    </div>",
-        )
+        if "ChatBubble" not in layout_jsx:
+            layout_jsx = layout_jsx.replace(
+                "import { Sidebar } from './Sidebar';\nimport { Header } from './Header';",
+                "import { Sidebar } from './Sidebar';\nimport { Header } from './Header';\nimport { ChatBubble } from './ChatBubble';",
+            )
+            layout_jsx = layout_jsx.replace(
+                "        </main>\n      </div>\n    </div>",
+                "        </main>\n      </div>\n      <ChatBubble />\n    </div>",
+            )
         self.workspace.write_file("frontend/src/components/AppLayout.jsx", layout_jsx)
         await _emit_file_write(agent, "frontend/src/components/AppLayout.jsx", len(layout_jsx.splitlines()), event_bus)
 

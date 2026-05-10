@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import os
+import subprocess
 import uuid
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -81,8 +83,15 @@ async def start_pipeline(request: RunRequest):
     )
 
 
+def _ensure_baseline_tag():
+    """Create seed-app-baseline tag if it doesn't exist (marks the clean state)."""
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    subprocess.run(["git", "tag", "seed-app-baseline"], cwd=repo_root, capture_output=True)
+
+
 async def _run_pipeline():
     global current_pipeline, current_deploy_runner
+    _ensure_baseline_tag()
     deploy_runner = DeployRunner(current_workspace, settings.seed_app_path)
     current_deploy_runner = deploy_runner
 

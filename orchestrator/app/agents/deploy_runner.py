@@ -11,6 +11,7 @@ import asyncio
 import logging
 import os
 import shutil
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -98,6 +99,16 @@ class DeployRunner(AgentRunner):
                 shutil.copy2(str(src), str(dst))
                 deployed.append(item["path"])
                 logger.info("Deployed: %s -> %s", src, dst)
+
+            # Auto-commit deployed changes
+            repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+            subprocess.run(["git", "add", "seed-app/"], cwd=repo_root, capture_output=True)
+            intent_summary = pipeline.intent[:60] if pipeline.intent else "feature"
+            subprocess.run(
+                ["git", "commit", "-m", f"deploy(seed-app): {intent_summary}"],
+                cwd=repo_root, capture_output=True,
+            )
+            logger.info("Auto-committed deployed changes")
 
             result_msg = f"\n\nDeployed **{len(deployed)} files** to seed-app successfully.\n"
             await event_bus.emit(PipelineEvent(
