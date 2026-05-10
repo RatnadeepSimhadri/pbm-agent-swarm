@@ -60,7 +60,17 @@ This creates Python virtual environments and installs all npm/pip dependencies f
 
 ## Running
 
-### Mock Demo (no API key needed)
+### Step 1: Start the Seed App
+
+```bash
+make dev
+```
+
+Starts the PBM seed app — backend (`:8000`) and frontend (`:5173`). Open http://localhost:5173 and log in with any demo member email (e.g., `sarah.johnson@email.com`) to see the baseline app.
+
+### Step 2: Start the Demo (Mock — no API key needed)
+
+In a separate terminal:
 
 ```bash
 make demo
@@ -68,17 +78,11 @@ make demo
 
 Starts the orchestrator (`:8001`) and dashboard (`:5174`). Open http://localhost:5174, pick a scenario preset (Drug Cost Checker or Chat Bubble), and click **Build Feature**. The pipeline runs with canned agent outputs that simulate real Claude responses.
 
-After the pipeline completes, approve the deployment in the dashboard. The generated feature gets copied into the seed app.
-
-Then start the seed app to see the feature working:
-
-```bash
-make dev
-```
-
-Open http://localhost:5173 and log in with any demo member email (e.g., `sarah.johnson@email.com`).
+After the pipeline completes, approve the deployment in the dashboard. The generated feature gets copied into the seed app. Refresh the seed app at http://localhost:5173 to see the new feature live.
 
 ### Live Demo (real Claude agents)
+
+Instead of `make demo`, run:
 
 ```bash
 export ANTHROPIC_API_KEY=sk-...
